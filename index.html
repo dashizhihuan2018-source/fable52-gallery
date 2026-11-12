@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awesome Fable 5.2 · 本地画廊</title>
+<style>
+:root{
+  --bg:#0d0d12; --card:#16161f; --line:#2a2a38; --txt:#e8e8f0; --sub:#9a9ab0;
+  --accent:#6b4eff; --accent2:#3ec8ff; --chip:#1e1e2c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:"PingFang SC","Helvetica Neue",Arial,sans-serif}
+header{padding:36px 24px 18px;max-width:1200px;margin:0 auto}
+h1{font-size:26px;margin:0 0 6px}
+p.sub{color:var(--sub);margin:0;font-size:14px}
+.stats{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.stat{background:var(--chip);border:1px solid var(--line);border-radius:99px;padding:5px 14px;font-size:13px;color:var(--sub)}
+.stat b{color:var(--txt)}
+.nav{display:flex;gap:8px;flex-wrap:wrap;max-width:1200px;margin:0 auto;padding:0 24px 8px;position:sticky;top:0;background:var(--bg);z-index:5;padding-top:14px;padding-bottom:14px}
+.tab{border:1px solid var(--line);background:var(--chip);color:var(--sub);border-radius:99px;padding:7px 16px;font-size:14px;cursor:pointer;user-select:none}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tab small{opacity:.8;margin-left:4px}
+#grid{max-width:1200px;margin:0 auto;padding:16px 24px 60px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.thumb{position:relative;aspect-ratio:16/10;background:#000;display:block}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .rank{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.65);border:1px solid var(--line);border-radius:8px;padding:2px 9px;font-size:12px;color:var(--accent2)}
+.thumb .likes{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.65);border-radius:8px;padding:2px 9px;font-size:12px}
+.thumb .badge{position:absolute;bottom:8px;left:8px;background:rgba(107,78,255,.85);border-radius:8px;padding:2px 9px;font-size:12px;display:none}
+.card.video .thumb .badge{display:block}
+.card.video .thumb .rank{display:none}
+.body{padding:14px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.title{font-weight:700;font-size:15px;line-height:1.4}
+.desc{color:var(--sub);font-size:13px;line-height:1.55;flex:1}
+.meta{color:var(--sub);font-size:12px}
+.meta a{color:var(--accent2);text-decoration:none}
+.actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn{flex:1;min-width:90px;text-align:center;text-decoration:none;font-size:13px;border-radius:9px;padding:8px 10px;border:1px solid var(--line);color:var(--sub);background:var(--chip);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:hover{filter:brightness(1.15)}
+.empty{color:var(--sub)}
+.video-player{position:relative;background:#000}
+.video-player video{width:100%;display:block;max-height:320px}
+.video-player .rank,.video-player .likes{position:absolute;background:rgba(0,0,0,.65);border:1px solid var(--line);border-radius:8px;padding:2px 9px;font-size:12px}
+.video-player .rank{top:8px;left:8px;color:var(--accent2)}
+.video-player .likes{top:8px;right:8px}
+footer{max-width:1200px;margin:0 auto;padding:0 24px 40px;color:var(--sub);font-size:12px;line-height:1.7}
+#search{max-width:1200px;margin:0 auto;padding:0 24px}
+#search input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--txt);font-size:14px;outline:none}
+</style>
+</head>
+<body>
+<header>
+<h1>Awesome Fable 5.2 — 本地画廊</h1>
+<p class="sub">用 Claude Fable 5.2 做出来、能直接打开玩的东西 · 共 118 项（57 个可打开作品 + 61 个视频演示）· 逐条体验：点「打开作品」直接玩，点「▶ 视频」看原帖演示，点「原帖」看 X 帖子。</p>
+<div class="stats" id="stats"></div>
+</header>
+<div class="nav" id="nav"></div>
+<div id="search"><input id="q" placeholder="搜索标题 / 作者 / 描述…"></div>
+<div id="grid"></div>
+<footer>
+数据来自 <code>awesome-fable-5.2</code> 仓库（data/works.json），动图与视频直接读取仓库 assets。链接实测日期 2026-11-10。部分作品（claude.ai artifact、X 帖子）可能需登录才能打开。
+</footer>
+<script>
+const SECTIONS = [
+  ["all","全部"],["游戏","游戏"],["3d-场景","3D 场景"],["网页与工具","网页与工具"],
+  ["视频与动画（附源码）","动画与短片"],["video-only","只有视频"],["top","⭐ 最受欢迎 TOP6"]
+];
+const ZH = {"游戏":"游戏","3d-场景":"3D 场景与场景","网页与工具":"网页与工具","视频与动画（附源码）":"动画与短片（附源码）","video-only":"只有视频"};
+let data=[];
+let current="all", topIds=new Set();
+
+function fmtLikes(n){return n>=1000?(n/1000).toFixed(1).replace(/\.0$/,"")+"k":""+n;}
+
+async function init(){
+  data = await (await fetch("works.json")).json();
+  // top 6 by likes among openable works (url present)
+  const openable = data.filter(w=>w.url).sort((a,b)=>b.likes-a.likes);
+  openable.slice(0,6).forEach(w=>topIds.add(w.id));
+  const counts={};
+  data.forEach(w=>{const k=w.section==="3D 场景"?"3d-场景":w.section;counts[k]=(counts[k]||0)+1;});
+  document.getElementById("stats").innerHTML =
+    `<span class="stat"><b>${data.length}</b> 项</span>` +
+    data.filter(w=>w.url).length>=0 ? `<span class="stat"><b>${openable.length}</b> 可打开</span>`:"" +
+    `<span class="stat"><b>${data.filter(w=>w.section==="video-only").length}</b> 仅视频</span>`;
+  const nav=document.getElementById("nav");
+  SECTIONS.forEach(([k,label])=>{
+    let count=null;
+    if(k==="all") count=data.length;
+    else if(k==="top") count=6;
+    else {
+      const sk=k==="3d-场景"?"3D 场景":k;
+      count=counts[sk]||0;
+    }
+    const el=document.createElement("div");
+    el.className="tab"+(k==="all"?" active":"");
+    el.dataset.k=k;
+    el.innerHTML=label+(count!=null?`<small>${count}</small>`:"");
+    el.onclick=()=>{current=k;document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t===el));render();};
+    nav.appendChild(el);
+  });
+  document.getElementById("q").addEventListener("input",render);
+  render();
+}
+
+function match(w,q){
+  if(!q)return true;
+  q=q.toLowerCase();
+  return (w.title+" "+w.title_zh+" "+w.author+" "+w.description+" "+w.description_zh).toLowerCase().includes(q);
+}
+
+function render(){
+  const q=document.getElementById("q").value.trim();
+  const grid=document.getElementById("grid");
+  let list=data.filter(w=>match(w,q));
+  if(current==="top") list=list.filter(w=>topIds.has(w.id)).sort((a,b)=>b.likes-a.likes);
+  else if(current!=="all") list=list.filter(w=>(w.section==="3D 场景"?"3d-场景":w.section)===current);
+  if(!list.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:40px;text-align:center">没有匹配项</div>`;return;}
+  grid.innerHTML="";
+  list.forEach(w=>{
+    const openable=!!w.url;
+    const card=document.createElement("div");
+    card.className="card"+(w.section==="video-only"?" video":"");
+    const media = w.videos&&w.videos.length
+      ? `<div class="video-player"><video controls preload="none" poster="${w.preview}"><source src="${w.videos[0].url}" type="video/mp4"></video></div>`
+      : `<a class="thumb" href="${w.url||"#"}" target="_blank" rel="noopener"><img loading="lazy" src="${w.preview}" alt="" onerror="this.parentNode.innerHTML='<span class=empty style=padding:40px;display:block>无预览</span>'"></a>`;
+    const badge = w.videos&&w.videos.length?`<span class="badge">▶ 视频 ${Math.round(w.videos[0].duration_s)}s</span>`:``;
+    const links=[];
+    if(w.url) links.push(`<a class="btn primary" href="${w.url}" target="_blank" rel="noopener">打开作品</a>`);
+    if(w.post) links.push(`<a class="btn" href="${w.post}" target="_blank" rel="noopener">原帖 ↗</a>`);
+    if(w.extra_links&&w.extra_links.length) w.extra_links.forEach(l=>links.push(`<a class="btn" href="${typeof l==="string"?l:l.url}" target="_blank" rel="noopener">源码 / 链接 ↗</a>`));
+    card.innerHTML=`
+      ${media}
+      <div class="body">
+        <div class="title">${w.title_zh||w.title}</div>
+        <div class="desc">${w.description_zh||w.description||""}</div>
+        <div class="meta">@${w.author} · ♥ ${fmtLikes(w.likes)}${openable?` · <span class="rank" style="position:static;display:none">#${w.id}</span>`:""}</div>
+        <div class="actions">${links.join("")}</div>
+      </div>`;
+    if(openable){
+      const host = card.querySelector(".video-player") || card.querySelector(".thumb");
+      const rp=document.createElement("span");
+      rp.className="rank"; rp.textContent="#"+w.id; rp.style.position="absolute";
+      rp.style.top="8px"; rp.style.left="8px";
+      const like=document.createElement("span");
+      like.className="likes"; like.textContent="♥ "+fmtLikes(w.likes);
+      host.appendChild(rp); host.appendChild(like);
+    }
+    grid.appendChild(card);
+  });
+}
+init();
+</script>
+</body>
+</html>
